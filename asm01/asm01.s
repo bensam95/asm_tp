@@ -2,8 +2,7 @@ global_start
 
 section .data
 msg db "1337" , 10
-
-
+len equ $ - msg
 section .text
 
     mov rax, 1

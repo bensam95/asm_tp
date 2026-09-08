@@ -3,7 +3,6 @@ section .bss
 
 section .data
     msg db "1337" , 10
-    len equ $ - msg
 
 section .text
     global _start
@@ -24,7 +23,7 @@ _end:
     mov rax, 1
     mov rdi, 1 
     mov rsi, msg
-    mov rdx, len
+    mov rdx, rax
     syscall
 
 

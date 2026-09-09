@@ -1,8 +1,8 @@
-section .bss
-    input resb 256
-
 section .data
     msg db "1337" , 10
+
+section .bss
+    input resb 256
 
 section .text
     global _start
@@ -18,12 +18,13 @@ _start:
     jne _error
     cmp byte [input +1], 0x32
     jne _error
-
+    cmp byte [input + 2], 10
+    jne _error
 _end:
     mov rax, 1
     mov rdi, 1 
     mov rsi, msg
-    mov rdx, rax
+    mov rdx, 5
     syscall
 
 

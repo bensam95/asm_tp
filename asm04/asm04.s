@@ -1,44 +1,64 @@
-section .data
+section .bss
+    input resb 64
 
 section .text
     global _start
 
 _start:
-    mov rax, 0
-    mov rdi, 0
-    mov rsi, input
-    mov rdx, 256
-    syscall
-     
-    cmp qword [rsp], 2
-    jne _error
 
-    mov rsi, [rsp + 16]
-
-    cmp byte [rsi], '4'       
-    jne _error
-    cmp byte [rsi + 1], '2'   
-    jne _error
-    cmp byte [rsi + 2], 0     
-    jne _error
-
-_end:
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, msg
-    mov rdx, 5
+    mov rax, 0              
+    mov rdi, 0              
+    mov rsi, input          
+    mov rdx, 64            
     syscall
 
-    mov rax, 60
-    mov rdi, 0
+    
+    cmp rax, 0
+    jle _not_a_number       
+
+    mov rcx, rax            
+    dec rcx                 
+    cmp byte [input + rcx], 10
+    jne .check_empty
+    dec rax                 
+
+.check_empty:
+    
+    cmp rax, 0
+    jle _not_a_number
+
+
+    xor rbx, rbx            
+
+.validation_loop:
+    mov dl, [input + rbx]
+
+    cmp dl, '0'
+    jl _not_a_number        
+    cmp dl, '9'
+    jg _not_a_number       
+
+    inc rbx
+    cmp rbx, rax         
+    jl .validation_loop
+
+    dec rax                 
+    mov dl, [input + rax]
+
+    test dl, 1
+    jnz _is_odd           
+
+_even:
+    mov rax, 60             
+    mov rdi, 0              
     syscall
 
-_error:
-    mov rax, 60
-    mov rdi, 1
+_odd:
+    mov rax, 60             
+    mov rdi, 1              
     syscall
 
-_err
-    mov rax, 60
-    mov rdi, 2
+_not_a_number:
+    mov rax, 60             
+    mov rdi, 2              
     syscall

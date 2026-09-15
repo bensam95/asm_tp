@@ -1,10 +1,15 @@
 section .data
-    msg db "1337", 10
 
 section .text
     global _start
 
 _start:
+    mov rax, 0
+    mov rdi, 0
+    mov rsi, input
+    mov rdx, 256
+    syscall
+     
     cmp qword [rsp], 2
     jne _error
 
@@ -31,4 +36,9 @@ _end:
 _error:
     mov rax, 60
     mov rdi, 1
+    syscall
+
+_err
+    mov rax, 60
+    mov rdi, 2
     syscall

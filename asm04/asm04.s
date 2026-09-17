@@ -1,34 +1,70 @@
-section .data
-    msg db "1337", 10
-
+global _start
 section .text
-    global _start
-
 _start:
-    cmp qword [rsp], 2
-    jne _error
+    mov bl, 'a'
+    mov dword [count], 0
 
-    mov rsi, [rsp + 16]
+    readchar:
+        mov rax, 0
+        mov rdi, 0
+        mov rsi, char
+        mov rdx, 1
+        syscall
 
-    cmp byte [rsi], '4'       
-    jne _error
-    cmp byte [rsi + 1], '2'   
-    jne _error
-    cmp byte [rsi + 2], 0     
-    jne _error
+    cmp rax, 0
+    je check
 
-_end:
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, msg
-    mov rdx, 5
-    syscall
+    cmp byte [char], 10
+    je check
 
-    mov rax, 60
-    mov rdi, 0
-    syscall
+    cmp dword [count], 512
+    jge usage_error
+    inc dword [count]
 
-_error:
-    mov rax, 60
-    mov rdi, 1
-    syscall
+    cmp byte [char], '9'
+    ja not_digit
+    cmp byte [char], '0'
+    jb not_digit
+
+    mov al, byte [char]
+    cmp al, 10
+    je check
+
+    mov bl, al
+    jmp readchar
+
+    not_digit:
+        cmp dword [count], 1
+        jne usage_error
+        cmp byte [char], '-'
+        jne usage_error
+        jmp readchar
+
+    check:
+        cmp bl, 'a'
+        je usage_error
+
+        test bl, 1
+        jz success
+        jmp error
+
+    error:
+        mov rax, 60
+        mov rdi, 1
+        syscall
+
+    success:
+        mov rax, 60
+        xor rdi, rdi
+        syscall
+
+    usage_error:
+        mov rax, 60
+        mov rdi, 2
+        syscall
+
+
+
+section .bss
+    char resb 1
+    count resd 1

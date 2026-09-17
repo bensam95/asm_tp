@@ -1,70 +1,69 @@
 global _start
+
 section .text
 _start:
-    mov bl, 'a'
-    mov dword [count], 0
+    xor r8d, r8d
+    xor r9b, r9b
+    xor r10d, r10d
 
-    readchar:
-        mov rax, 0
-        mov rdi, 0
-        mov rsi, char
-        mov rdx, 1
-        syscall
+readchar:
+    mov rax, 0
+    mov rdi, 0
+    mov rsi, char
+    mov rdx, 1
+    syscall
 
-    cmp rax, 0
-    je check
+    test rax, rax
+    jle finish
 
-    cmp byte [char], 10
-    je check
+    movzx eax, byte [char]
 
-    cmp dword [count], 512
-    jge usage_error
-    inc dword [count]
+    cmp al, 10
+    je finish
+    cmp al, 13
+    je finish
 
-    cmp byte [char], '9'
-    ja not_digit
-    cmp byte [char], '0'
-    jb not_digit
+    inc r10d
 
-    mov al, byte [char]
-    cmp al, 10
-    je check
+    cmp al, '-'
+    je handle_sign
+    cmp al, '+'
+    je handle_sign
 
-    mov bl, al
-    jmp readchar
+    cmp al, '0'
+    jb usage_error
+    cmp al, '9'
+    ja usage_error
 
-    not_digit:
-        cmp dword [count], 1
-        jne usage_error
-        cmp byte [char], '-'
-        jne usage_error
-        jmp readchar
+    inc r8d
+    mov r9b, al
+    jmp readchar
 
-    check:
-        cmp bl, 'a'
-        je usage_error
+handle_sign:
+    cmp r10d, 1
+    jne usage_error
+    jmp readchar
 
-        test bl, 1
-        jz success
-        jmp error
+finish:
+    test r8d, r8d
+    jz usage_error
 
-    error:
-        mov rax, 60
-        mov rdi, 1
-        syscall
+    test r9b, 1
+    jnz is_odd
 
-    success:
-        mov rax, 60
-        xor rdi, rdi
-        syscall
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 
-    usage_error:
-        mov rax, 60
-        mov rdi, 2
-        syscall
+is_odd:
+    mov rax, 60
+    mov rdi, 1
+    syscall
 
-
+usage_error:
+    mov rax, 60
+    mov rdi, 2
+    syscall
 
 section .bss
-    char resb 1
-    count resd 1
+    char resb 1

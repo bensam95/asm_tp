@@ -6,7 +6,7 @@ section .bss
 section .text
 _start:
     cmp qword [rsp], 3
-    jne arg_error
+    jne arg_err
 
     mov rdi, [rsp + 16]
     call parse_int
@@ -47,23 +47,23 @@ parse_int:
     inc rdi
 
 .loop:
-    movzx rdx, byte [rdi]
-    test dl, dl
+    movzx r10, byte [rdi]
+    test r10, r10
     jz .fait
 
-    cmp dl, '0'
+    cmp r10, '0'
     jb calc_err
-    cmp dl, '9'
+    cmp r10, '9'
     ja calc_err
 
-    sub dl, '0'
+    sub r10, '0'
     inc rcx
 
     mov r9, 10
     mul r9
     jo calc_err
 
-    add rax, rdx
+    add rax, r10
     jc calc_err
 
     inc rdi
@@ -113,6 +113,16 @@ print_int:
     jns .convert
 
     mov r9, 1
+    mov r11, 0x8000000000000000
+    cmp rax, r11
+    jne .do_neg
+
+    dec rsi
+    mov byte [rsi], '8'
+    mov rax, 922337203685477580
+    jmp .convert
+
+.do_neg:
     neg rax
 
 .convert:
@@ -149,7 +159,7 @@ calc_err:
     mov rdi, 1
     syscall
 
-arg_error:
+arg_err:
     mov rax, 60
     mov rdi, 2
     syscall

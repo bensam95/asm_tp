@@ -1,165 +1,90 @@
 global _start
 
-section .bss
-    buffer resb 32
-
 section .text
 _start:
-    cmp qword [rsp], 3
-    jne arg_err
+    mov rax, 0
+    mov rdi, 0
+    mov rsi, buffer
+    mov rdx, 64
+    syscall
 
-    mov rdi, [rsp + 16]
-    call parse_int
+    cmp rax, 0
+    jle erreur
+
     mov r12, rax
+    mov r15, 0
+    mov rbx, 0
+    mov r14, 0
 
-    mov rdi, [rsp + 24]
-    call parse_int
-    mov r13, rax
+    cmp byte [buffer], '-'
+    jne loop
+    mov r14, 1
+    inc r15
+    cmp r15, r12
+    jge erreur
 
-    add r12, r13
-    jo calc_err
+loop:
+    mov al, byte [buffer + r15]
+    cmp al, 10
+    je test_nombre
 
-    mov rdi, r12
-    call print_int
+    cmp al, '0'
+    jl erreur
+    cmp al, '9'
+    jg erreur
 
-    mov rax, 60
-    xor rdi, rdi
-    syscall
+    sub al, '0'
+    imul rbx, 10
 
-parse_int:
-    xor rax, rax
-    xor r8, r8
-    xor rcx, rcx
+    mov r8, 0
+    mov r8b, al
+    add rbx, r8
 
-    movzx rdx, byte [rdi]
-    cmp dl, '-'
-    je .negatif
-    cmp dl, '+'
-    je .positif
-    jmp .loop
+    inc r15
+    cmp r15, r12
+    jl loop
 
-.negatif:
-    mov r8, 1
-    inc rdi
-    jmp .loop
+test_nombre:
+    cmp r15, 0
+    je erreur
 
-.positif:
-    inc rdi
+    cmp r14, 1
+    je impair
 
-.loop:
-    movzx r10, byte [rdi]
-    test r10, r10
-    jz .fait
+    cmp rbx, 2
+    jl impair
 
-    cmp r10, '0'
-    jb calc_err
-    cmp r10, '9'
-    ja calc_err
+    mov rcx, 2
 
-    sub r10, '0'
-    inc rcx
+div_loop:
+    mov rax, rcx
+    imul rax, rcx
+    cmp rax, rbx
+    jg pair
 
-    mov r9, 10
-    mul r9
-    jo calc_err
-
-    add rax, r10
-    jc calc_err
-
-    inc rdi
-    jmp .loop
-
-.fait:
-    test rcx, rcx
-    jz calc_err
-
-    test r8, r8
-    jz .position
-
-    mov rdx, 0x8000000000000000
-    cmp rax, rdx
-    ja calc_err
-    je .min_int
-
-    neg rax
-    ret
-
-.min_int:
-    mov rax, rdx
-    ret
-
-.position:
-    mov rdx, 0x7FFFFFFFFFFFFFFF
-    cmp rax, rdx
-    ja calc_err
-    ret
-
-print_int:
-    lea rsi, [buffer + 31]
-    mov byte [rsi], 10
-    mov r8, rsi
-
-    test rdi, rdi
-    jnz .non_zero
-
-    dec rsi
-    mov byte [rsi], '0'
-    jmp .output
-
-.non_zero:
-    xor r9, r9
-    mov rax, rdi
-    test rax, rax
-    jns .convert
-
-    mov r9, 1
-    mov r11, 0x8000000000000000
-    cmp rax, r11
-    jne .do_neg
-
-    dec rsi
-    mov byte [rsi], '8'
-    mov rax, 922337203685477580
-    jmp .convert
-
-.do_neg:
-    neg rax
-
-.convert:
-    mov rcx, 10
-.conv_loop:
-    test rax, rax
-    jz .add_sign
-
-    xor rdx, rdx
+    mov rax, rbx
+    mov rdx, 0
     div rcx
-    add dl, '0'
-    dec rsi
-    mov [rsi], dl
-    jmp .conv_loop
+    cmp rdx, 0
+    je impair
 
-.add_sign:
-    test r9, r9
-    jz .output
-    dec rsi
-    mov byte [rsi], '-'
+    inc rcx
+    jmp div_loop
 
-.output:
-    mov rdx, r8
-    sub rdx, rsi
-    inc rdx
-
-    mov rax, 1
-    mov rdi, 1
+pair:
+    mov rax, 60
+    mov rdi, 0
     syscall
-    ret
 
-calc_err:
+impair:
     mov rax, 60
     mov rdi, 1
     syscall
 
-arg_err:
+erreur:
     mov rax, 60
     mov rdi, 2
     syscall
+
+section .bss
+    buffer resb 64

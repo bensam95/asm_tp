@@ -88,3 +88,4 @@ erreur:
 
 section .bss
     buffer resb 64
+    

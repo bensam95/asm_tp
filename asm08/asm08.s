@@ -14,9 +14,35 @@ _start:
     cmp byte [rsi], 0
     je exit_1
 
+    cmp byte [rsi], '-'
+    jne check_positif
+
+    inc rsi
+    cmp byte [rsi], 0
+    je exit_1
+
+verif_chiffres_neg:
+    mov al, [rsi]
+    cmp al, 0
+    je somme_nulle
+    cmp al, '0'
+    jb exit_1
+    cmp al, '9'
+    ja exit_1
+    inc rsi
+    jmp verif_chiffres_neg
+
+check_positif:
+    cmp byte [rsi], '+'
+    jne debut_lecture
+    inc rsi
+    cmp byte [rsi], 0
+    je exit_1
+
+debut_lecture:
     mov rax, 0
 
-lire_nombre:
+lecture:
     mov bl, [rsi]
     cmp bl, 0
     je fin_lecture
@@ -28,17 +54,19 @@ lire_nombre:
 
     sub bl, '0'
 
-    mov rcx, rax
-    add rax, rax
-    add rax, rax
-    add rax, rcx
-    add rax, rax
+    mov r10, 10
+    mul r10
+    jc exit_1
 
     movzx rdx, bl
     add rax, rdx
+    jc exit_1
+
+    test rax, rax
+    js exit_1
 
     inc rsi
-    jmp lire_nombre
+    jmp lecture
 
 fin_lecture:
     cmp rax, 1
@@ -49,7 +77,7 @@ fin_lecture:
 
 boucle_somme:
     cmp rcx, rax
-    je afficher_resultat
+    je _resultat
 
     add rbx, rcx
     inc rcx
@@ -58,7 +86,7 @@ boucle_somme:
 somme_nulle:
     mov rbx, 0
 
-afficher_resultat:
+_resultat:
     mov rax, rbx
     mov r12, 0
 
@@ -74,17 +102,11 @@ decoupe_chiffres:
     je print_pile
 
     mov rdx, 0
-div_10:
-    cmp rax, 10
-    jb fin_div
-    sub rax, 10
-    inc rdx
-    jmp div_10
+    mov rcx, 10
+    div rcx
 
-fin_div:
-    push rax
+    push rdx
     inc r12
-    mov rax, rdx
     jmp decoupe_chiffres
 
 print_pile:

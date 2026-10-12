@@ -15,6 +15,7 @@ _start:
     mov r15, 0
     mov rbx, 0
     mov r14, 0
+    mov r13, 0
 
     cmp byte [buffer], '-'
     jne loop
@@ -36,16 +37,16 @@ loop:
     sub al, '0'
     imul rbx, 10
 
-    mov r8, 0
-    mov r8b, al
+    movzx r8, al
     add rbx, r8
+    inc r13
 
     inc r15
     cmp r15, r12
     jl loop
 
 test_nombre:
-    cmp r15, 0
+    cmp r13, 0
     je erreur
 
     cmp r14, 1
@@ -88,4 +89,3 @@ erreur:
 
 section .bss
     buffer resb 64
-    

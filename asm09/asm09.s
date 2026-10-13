@@ -52,22 +52,20 @@ _start:
 
     xor rax, rax
 .parse_loop:
-    movzx rdx, byte [rsi]
-    test rdx, rdx
+    movzx rcx, byte [rsi]
+    test rcx, rcx
     jz .conversion_done
 
-    cmp rdx, '0'
+    cmp rcx, '0'
     jb exit_1
-    cmp rdx, '9'
+    cmp rcx, '9'
     ja exit_1
-    sub rdx, '0'
+    sub rcx, '0'
 
-    mov rcx, 10
-    mul rcx
-    test rdx, rdx
-    jnz exit_1
+    imul rax, rax, 10
+    jo exit_1
 
-    add rax, rdx
+    add rax, rcx
     jc exit_1
 
     inc rsi

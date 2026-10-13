@@ -34,10 +34,19 @@ _start:
     je exit_1
 
     xor r8, r8
+
     cmp byte [rsi], '-'
-    jne .parse_loop
+    jne .check_plus
     mov r8, 1
     inc rsi
+    jmp .check_after_sign
+
+.check_plus:
+    cmp byte [rsi], '+'
+    jne .check_after_sign
+    inc rsi
+
+.check_after_sign:
     cmp byte [rsi], 0
     je exit_1
 
@@ -51,10 +60,16 @@ _start:
     jb exit_1
     cmp rdx, '9'
     ja exit_1
-
     sub rdx, '0'
-    imul rax, rax, 10
+
+    mov rcx, 10
+    mul rcx
+    test rdx, rdx
+    jnz exit_1
+
     add rax, rdx
+    jc exit_1
+
     inc rsi
     jmp .parse_loop
 
@@ -67,7 +82,7 @@ _start:
     jnz .div_loop
     mov byte [rdi], '0'
     dec rdi
-    jmp .add_sign
+    jmp .print
 
 .div_loop:
     test rax, rax

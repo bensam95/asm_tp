@@ -1,130 +1,121 @@
 section .bss
-    buffer resb 70
+    chiffres resb 70
 
 section .text
     global _start
 
 _start:
     mov rax, [rsp]
+    mov rbx, 16
+
     cmp rax, 2
-    je .mode_hex
+    je .un_argument
     cmp rax, 3
-    je .mode_flag
-    jmp exit_2
+    jne erreur_usage
 
-.mode_hex:
-    mov r12, 16
     mov rsi, [rsp + 16]
-    jmp .parse
-
-.mode_flag:
-    mov rbx, [rsp + 16]
-    cmp byte [rbx], '-'
-    jne exit_2
-    cmp byte [rbx + 1], 'b'
-    jne exit_2
-    cmp byte [rbx + 2], 0
-    jne exit_2
-
-    mov r12, 2
+    cmp word [rsi], '-b'
+    jne erreur_usage
+    cmp byte [rsi + 2], 0
+    jne erreur_usage
+    mov rbx, 2
     mov rsi, [rsp + 24]
+    jmp .parser
 
-.parse:
-    cmp byte [rsi], 0
-    je exit_1
+.un_argument:
+    mov rsi, [rsp + 16]
 
-    xor r8, r8
+.parser:
+    xor r12, r12
+    xor r13d, r13d
+    xor r15d, r15d
 
     cmp byte [rsi], '-'
-    jne .check_plus
-    mov r8, 1
-    inc rsi
-    jmp .check_after_sign
-
-.check_plus:
-    cmp byte [rsi], '+'
-    jne .check_after_sign
+    jne .chiffres_boucle
+    mov r13d, 1
     inc rsi
 
-.check_after_sign:
-    cmp byte [rsi], 0
-    je exit_1
+.chiffres_boucle:
+    movzx eax, byte [rsi]
+    test al, al
+    jz .parsing_fini
 
-    xor rax, rax
-.parse_loop:
-    movzx rcx, byte [rsi]
-    test rcx, rcx
-    jz .conversion_done
+    cmp al, '0'
+    jb erreur_nombre
+    cmp al, '9'
+    ja erreur_nombre
 
-    cmp rcx, '0'
-    jb exit_1
-    cmp rcx, '9'
-    ja exit_1
-    sub rcx, '0'
-
-    imul rax, rax, 10
-    jo exit_1
-
-    add rax, rcx
-    jc exit_1
+    sub eax, '0'
+    inc r15d
+    imul r12, r12, 10
+    add r12, rax
 
     inc rsi
-    jmp .parse_loop
+    jmp .chiffres_boucle
 
-.conversion_done:
-    mov rdi, buffer + 68
-    mov byte [rdi], 10
-    dec rdi
+.parsing_fini:
+    test r15d, r15d
+    jz erreur_nombre
 
-    test rax, rax
-    jnz .div_loop
-    mov byte [rdi], '0'
-    dec rdi
-    jmp .print
+    lea r14, [chiffres + 69]
+    mov byte [r14], 10
 
-.div_loop:
-    test rax, rax
-    jz .add_sign
+.convertir:
+    test r12, r12
+    jz .conversion_finie
 
     xor rdx, rdx
-    div r12
+    mov rax, r12
+    div rbx
 
-    cmp rdx, 9
-    jbe .digit
+    cmp dl, 10
+    jb .chiffre_decimal
     add dl, 'A' - 10
-    jmp .store
-.digit:
+    jmp .stocker
+.chiffre_decimal:
     add dl, '0'
-.store:
-    mov [rdi], dl
-    dec rdi
-    jmp .div_loop
+.stocker:
+    dec r14
+    mov [r14], dl
 
-.add_sign:
-    test r8, r8
-    jz .print
-    mov byte [rdi], '-'
-    dec rdi
+    mov r12, rax
+    jmp .convertir
 
-.print:
-    inc rdi
-    mov rsi, rdi
-    mov rdx, buffer + 69
-    sub rdx, rdi
+.conversion_finie:
+    test r13d, r13d
+    jz .ecrire
+
+    dec r14
+    mov byte [r14], '-'
+
+.ecrire:
+    lea rax, [chiffres + 70]
+    sub rax, r14
+    mov rdx, rax
+    mov rsi, r14
+
+.boucle_ecriture:
     mov rax, 1
     mov rdi, 1
     syscall
+    cmp rax, -4
+    je .boucle_ecriture
+    test rax, rax
+    jle erreur_nombre
+    add rsi, rax
+    sub rdx, rax
+    jnz .boucle_ecriture
 
-    mov rax, 60
-    xor rdi, rdi
-    syscall
+    xor edi, edi
+    jmp sortie
 
-exit_1:
-    mov rax, 60
-    mov rdi, 1
-    syscall
+erreur_nombre:
+    mov edi, 1
+    jmp sortie
 
-exit_2:
-    mov rax, 60
-    mov rdi, 2
+erreur_usage:
+    mov edi, 2
+
+sortie:
+    mov eax, 60
     syscall

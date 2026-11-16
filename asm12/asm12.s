@@ -1,61 +1,62 @@
-global _start
-
 section .bss
-	input  resb 1048576
-	output resb 1048577
+    buffer resb 4096
 
 section .text
+global _start
+
 _start:
-	xor r12, r12
+    xor r12, r12
 
-.read:
-	mov rax, 0
-	mov rdi, 0
-	lea rsi, [input + r12]
-	mov rdx, 1048576
-	sub rdx, r12
-	jz .reverse
-	syscall
-	test rax, rax
-	js _error1
-	jz .reverse
-	add r12, rax
-	jmp .read
+lire_entree:
+    cmp r12, 4095
+    jae preparer_inversion
 
-.reverse:
-	test r12, r12
-	jz .print
-	cmp byte [input + r12 - 1], 10
-	jne .start_rev
-	dec r12
+    mov rax, 0
+    mov rdi, 0
+    lea rsi, [buffer + r12]
+    mov rdx, 1
+    syscall
 
-.start_rev:
-	mov rcx, r12
-	mov rsi, input
-	lea rdi, [output + r12 - 1]
-.loop:
-	test rcx, rcx
-	jz .print
-	mov al, [rsi]
-	mov [rdi], al
-	inc rsi
-	dec rdi
-	dec rcx
-	jmp .loop
+    cmp rax, 0
+    jle preparer_inversion
 
-.print:
-	mov byte [output + r12], 10
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, output
-	lea rdx, [r12 + 1]
-	syscall
+    cmp byte [buffer + r12], 10
+    je preparer_inversion
 
-	mov rax, 60
-	xor rdi, rdi
-	syscall
+    inc r12
+    jmp lire_entree
 
-_error1:
-	mov rax, 60
-	mov rdi, 1
-	syscall
+preparer_inversion:
+    xor r14, r14
+    mov r15, r12
+    dec r15
+
+inverser_chaine:
+    cmp r14, r15
+    jae ajouter_fin_ligne
+
+    mov al, [buffer + r14]
+    mov bl, [buffer + r15]
+
+    mov [buffer + r14], bl
+    mov [buffer + r15], al
+
+    inc r14
+    dec r15
+    jmp inverser_chaine
+
+ajouter_fin_ligne:
+    mov byte [buffer + r12], 10
+    inc r12
+
+ecrire_resultat:
+    mov rax, 1
+    mov rdi, 1
+    lea rsi, [buffer]
+    mov rdx, r12
+    syscall
+
+sortie_succes:
+    mov rax, 60
+    mov rdi, 0
+    syscall

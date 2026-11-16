@@ -118,4 +118,4 @@ erreur_usage:
 
 sortie:
     mov eax, 60
-    syscall
+    syscall 

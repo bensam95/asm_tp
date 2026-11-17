@@ -6,6 +6,7 @@ global _start
 
 _start:
     xor r12, r12
+    xor r13, r13
 
 lire_entree:
     cmp r12, 4095
@@ -20,6 +21,8 @@ lire_entree:
     cmp rax, 0
     jle preparer_inversion
 
+    mov r13, 1
+
     cmp byte [buffer + r12], 10
     je preparer_inversion
 
@@ -27,6 +30,15 @@ lire_entree:
     jmp lire_entree
 
 preparer_inversion:
+    cmp r12, 0
+    jne inverser_debut
+
+    cmp r13, 0
+    je ecrire_resultat
+
+    jmp ajouter_fin_ligne
+
+inverser_debut:
     xor r14, r14
     mov r15, r12
     dec r15
